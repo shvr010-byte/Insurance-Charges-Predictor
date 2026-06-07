@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import Ridge, RidgeCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 import pickle
@@ -61,17 +61,17 @@ def load_or_train_model():
             
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42)
             
-            # Train Ridge model with optimal alpha=0.1 (R² ≈ 0.803)
-            model = Ridge(alpha=0.1)
-            model.fit(X_train, y_train)
+            # Train Ridge model with CV
+            ridge_cv = RidgeCV(alphas=[0.1, 1.0, 10.0, 100.0], cv=5)
+            ridge_cv.fit(X_train, y_train)
             
             # Save model and scaler
             with open(model_path, 'wb') as f:
-                pickle.dump(model, f)
+                pickle.dump(ridge_cv, f)
             with open(scaler_path, 'wb') as f:
                 pickle.dump(scaler, f)
             
-            return model, scaler
+            return ridge_cv, scaler
         except Exception as e:
             st.error(f"Error training model: {e}")
             return None, None
@@ -82,7 +82,7 @@ model, scaler = load_or_train_model()
 if model is None:
     st.warning("Please ensure 'insurance.csv' is in the same directory as this app.")
 else:
-    st.success("✅ Model loaded successfully (Ridge Regression, α=0.1, R²≈0.803)!")
+    st.success("✅ Model loaded successfully!")
     
     # Create input form
     st.sidebar.header("📋 Enter Patient Information")
@@ -159,4 +159,4 @@ else:
         st.error("High Risk - Higher insurance rates")
 
 st.markdown("---")
-st.caption("Insurance Charges Prediction Model | Ridge Regression (α=0.1) | R²≈0.803")
+st.caption("Insurance Charges Prediction Model | Based on Ridge Regression with Cross-Validation")
